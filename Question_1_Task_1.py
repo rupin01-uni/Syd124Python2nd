@@ -1,28 +1,31 @@
 import pandas as pd
-import zipfile
 import os
+import zipfile
+import shutil
 
+zipped_folder_relative_path = "Assignment 2.zip"
+zipped_folder_path = os.path.join(os.getcwd(), zipped_folder_relative_path)
 
-zip_folder_path = 'D:\Software_now_project\Assignment 2.zip'
-output_folder = 'D:\Software_now_project'
-with zipfile.ZipFile(zip_folder_path, 'r') as zip_ref:
-    zip_ref.extractall(output_folder)
+extracted_folder_path = os.path.join(os.getcwd(), "Assignment 2_Extracted")
+os.makedirs(extracted_folder_path, exist_ok=True)
 
+with zipfile.ZipFile(zipped_folder_path, 'r') as zip_ref:
+    zip_ref.extractall(extracted_folder_path)
 
-output_text_file = 'output_text.txt'
-text_data = []
+all_texts = []
 
+for file_name in os.listdir(extracted_folder_path):
+    if file_name.endswith('.csv'):
+        file_path = os.path.join(extracted_folder_path, file_name)
+        df = pd.read_csv(file_path)
 
-with open(output_text_file, 'w', encoding='utf-8') as txt_file:
-    for root, dirs, files in os.walk(output_folder):
-        for file in files:
-            if file.endswith(".csv"):
-                csv_path = os.path.join(root, file)
-                for chunk in pd.read_csv(csv_path, chunksize=1000):  
-                    if "SHORT_TEXT" in chunk.columns:
-                        for text in chunk["SHORT_TEXT"].astype(str):
-                            txt_file.write(text + '\n')
-                    elif "TEXT" in chunk.columns:
-                        for text in chunk["TEXT"].astype(str):
-                            txt_file.write(text + '\n')
+        texts_per_row = []
+        for _, row in df.iterrows():
+            largest_text_in_row = max(row.astype(str), key=len)
+            texts_per_row.append(largest_text_in_row)
 
+        all_texts.extend(texts_per_row)
+
+output_txt_file = os.path.join(os.getcwd(), "output_text_file.txt")
+with open(output_txt_file, 'w', encoding='utf-8') as txt_file:
+    txt_file.write('\n'.join(all_texts))
